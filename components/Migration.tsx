@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import ReactDOM from "react-dom/client";
 import { ethers } from "ethers";
+import GogeToken from "../pages/Goge.json";
 
 const provider = new ethers.providers.JsonRpcProvider(
     process.env.NEXT_PUBLIC_GOGE_JSON_RPC_PROVIDER
@@ -9,6 +10,13 @@ const provider = new ethers.providers.JsonRpcProvider(
 
 // get the end user
 const signer = provider.getSigner();
+
+// get the smart contract
+const contract = new ethers.Contract(
+  GogeToken.address,
+  GogeToken.abi,
+  signer
+);
 
 const Migration = () => {
   const [balance, setBalance] = useState() as any;
