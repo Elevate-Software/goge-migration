@@ -1,8 +1,9 @@
 import React from "react";
 import { useState } from "react";
 import ReactDOM from "react-dom/client";
-import { ethers } from "ethers";
-import GogeToken from "../pages/Goge.json";
+import { Contract, ethers } from "ethers";
+import GogeToken1 from "../pages/GogeTokenV1.json";
+import GogeToken2 from "../pages/GogeTokenV2.json";
 
 const provider = new ethers.providers.JsonRpcProvider(
     process.env.NEXT_PUBLIC_GOGE_JSON_RPC_PROVIDER
@@ -12,15 +13,21 @@ const provider = new ethers.providers.JsonRpcProvider(
 const signer = provider.getSigner();
 
 // get the smart contract
-const contract = new ethers.Contract(
-  GogeToken.address,
-  GogeToken.abi,
+const V1Contract = new ethers.Contract(
+  GogeToken1.address,
+  GogeToken1.abi,
+  signer
+);
+
+const V2Contract = new ethers.Contract(
+  GogeToken2.address,
+  GogeToken2.abi,
   signer
 );
 
 const Migration = () => {
-  const [balance, setBalance] = useState() as any;
-  const [walletAddress, _setAddress] = useState() as any;
+  const [v1Balance, setV1Balance] = useState() as any;
+  const [v2Balance, setV2Balance] = useState() as any;
   const [account, setAccount] = useState(null);
 
   async function getBalance() {
@@ -31,11 +38,22 @@ const Migration = () => {
         method: "eth_requestAccounts",
       });
       setAccount(account);
-  
-      const balance = Number(
-        ethers.utils.formatEther(await provider.getBalance(account))
-      );
-      setBalance(balance.toFixed(2));
+      
+      console.log(account);
+
+      if(account) {
+        const balance = Number(
+          ethers.utils.formatEther(await V1Contract.connect(account).balanceOf(account))
+        );
+        setV1Balance(balance.toFixed(2));
+      }
+
+      if(account) {
+        const balance = Number(
+          ethers.utils.formatEther(await V2Contract.connect(account).balanceOf(account))
+        );
+        setV2Balance(balance.toFixed(2));
+      }
 
     } else {
       console.log("Please install Wallet");
@@ -43,7 +61,10 @@ const Migration = () => {
   }
   
   async function migrateGoge(){
-    //migrateCodeHere
+    //
+    if(account !== null) {
+      await V2Contract.connect(account).migrate();
+    }
   }
 
   return (
@@ -56,15 +77,16 @@ const Migration = () => {
                   <div className="migrate-box">
                       <div className="px-4 py-5 sm:p-6">
                           <div className="mt-2 max-w-xl text-sm">
-                              <span>v1 token balance:</span><br /><span>v2 token balance:</span>
+                              <span>v1 token balance: {v1Balance ? v1Balance : ''}</span><br />
+                              <span>v2 token balance: {v2Balance ? v2Balance : ''}</span>
                           </div>
                           <div className="mt-5 flex flex-col items-center">
                               <button
                               type="button"
-                              onClick={balance ? migrateGoge : getBalance}
+                              onClick={account ? migrateGoge : getBalance}
                               className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
                               >
-                                {balance ? "Migrate" : "Connect Your Wallet"}
+                                {account ? "Migrate" : "Connect Your Wallet"}
                               </button>
                           </div>
                       </div>
