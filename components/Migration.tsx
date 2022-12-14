@@ -5,30 +5,28 @@ import { Contract, ethers } from "ethers";
 import GogeToken1 from "../pages/GogeTokenV1.json";
 import GogeToken2 from "../pages/GogeTokenV2.json";
 
-const provider = new ethers.providers.JsonRpcProvider(
-    process.env.NEXT_PUBLIC_GOGE_JSON_RPC_PROVIDER
-);
+const provider = new ethers.providers.JsonRpcProvider("https://white-holy-card.bsc.quiknode.pro/35930a98320168ebed18a133bdb6ef80c7d87469/");
 
 // get the end user
-const signer = provider.getSigner();
 
 // get the smart contract
 const V1Contract = new ethers.Contract(
   GogeToken1.address,
   GogeToken1.abi,
-  signer
+  provider
 );
 
 const V2Contract = new ethers.Contract(
   GogeToken2.address,
   GogeToken2.abi,
-  signer
+  provider
 );
 
 const Migration = () => {
   const [v1Balance, setV1Balance] = useState() as any;
   const [v2Balance, setV2Balance] = useState() as any;
   const [account, setAccount] = useState(null);
+  const [signer, setSigner] = useState(null) as any;
 
   async function getBalance() {
     const ethereum = (window as any).ethereum;
@@ -39,20 +37,19 @@ const Migration = () => {
       });
       setAccount(account);
       
+      const web3Provider = new ethers.providers.Web3Provider(ethereum); 
+      const signer = web3Provider.getSigner();
+      setSigner(signer);
       console.log(account);
 
       if(account) {
-        const balance = Number(
-          ethers.utils.formatEther(await V1Contract.connect(account).balanceOf(account))
-        );
-        setV1Balance(balance.toFixed(2));
+        const balance = ethers.utils.formatEther(await V1Contract.connect(signer).balanceOf(account));
+        setV1Balance(balance);
       }
 
       if(account) {
-        const balance = Number(
-          ethers.utils.formatEther(await V2Contract.connect(account).balanceOf(account))
-        );
-        setV2Balance(balance.toFixed(2));
+        const balance = ethers.utils.formatEther(await V2Contract.connect(signer).balanceOf(account));
+        setV2Balance(balance);
       }
 
     } else {
@@ -63,7 +60,10 @@ const Migration = () => {
   async function migrateGoge(){
     //
     if(account !== null) {
-      await V2Contract.connect(account).migrate();
+      //const allowanceResult = await V1Contract.connect(signer).approve(GogeToken2.address, ethers.utils.parseUnits(v1Balance));
+      //console.log(allowanceResult);
+      const migrateResult = await V2Contract.connect(signer).migrate();
+      console.log(migrateResult);
     }
   }
 
