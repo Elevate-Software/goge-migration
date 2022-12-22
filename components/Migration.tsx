@@ -87,12 +87,17 @@ const Migration = () => {
       if(balV1.gt(0)) {
         const signer = web3Provider.getSigner();
         const approvalTx = await contractV1.connect(signer).approve(GogeToken2.address, balV1);
-        setStatus("WaitingApproval");
+        setStatus("Approving");
         // wait until transaction is mined.
         await approvalTx.wait();
+
+        setStatus("WaitingConfirmation");
         
         const migrateTx = await contractV2.connect(signer).migrate();
         // wait until transaction is mined.
+
+        setStatus("Migrating");
+
         await migrateTx.wait();
 
         const balV2 = ethers.utils.formatEther(await contractV2.balanceOf(wallet));
@@ -148,9 +153,17 @@ const Migration = () => {
                               className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
                               type="button"
                               onClick={connected ? migrate : connect}
-                              disabled={(status == 'ConnectedNoTokens') ? true : (status == 'WaitingApproval') ? true : (status == 'Migrated') ? true : false}
+                              disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
                               >
-                                {(!status) ? "Connect Wallet" : (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" : (status == 'ConnectedTokens') ? 'Migrate' : (status == 'WaitingApproval') ? 'Please Approve in MetaMask' : (status == 'Migrated') ? 'Tokens Migrated!' : ''}
+                                { 
+                                  (!status) ? "Connect Wallet" : 
+                                  (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" : 
+                                  (status == 'ConnectedTokens') ? 'Migrate' : 
+                                  (status == 'Approving') ? 'Approving...' : 
+                                  (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' : 
+                                  (status == 'Migrating') ? 'Migrating...' : 
+                                  (status == 'Migrated') ? 'Tokens Migrated!' : 
+                                   ''}
                               </button>
                           </div>
                       </div>
