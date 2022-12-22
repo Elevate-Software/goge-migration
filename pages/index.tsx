@@ -9,18 +9,7 @@ import Rainbow from "../public/rainbow.png";
 export default function Home() {
   return (
     <>
-      <nav className="font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
-          <div className="mb-2 sm:mb-0">
-            <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
-          </div>
-          <div className="mb-2 sm:mb-0">
-            <Image src={Rainbow} className="inline" alt="rainbow" />
-          </div>
-          <div className="mt-5 flex flex-col items-center">
-            <div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm'>Token Address</div>
-          </div>
-      </nav>
-      <div>
+      <div className='bg-white h-screen'>
         <Migration />
       </div>
     </>
