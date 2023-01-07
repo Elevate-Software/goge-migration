@@ -12,170 +12,176 @@ import Logo2 from "../public/goge_logo_2.png";
 import Rainbow from "../public/rainbow.png";
 import { truncate } from 'truncate-ethereum-address';
 import { stat } from "fs";
+import '@rainbow-me/rainbowkit/styles.css';
+import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { alchemyProvider } from 'wagmi/providers/alchemy';
+import { publicProvider } from 'wagmi/providers/public';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-
-const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/bsc_testnet_chapel");
-let account = ''
-
-// get GOGE V1 token contract
-const contractV1 = new ethers.Contract(
-  GogeToken1.address,
-  GogeToken1.abi,
-  provider
-);
-
-// get GOGE V2 token contract
-const contractV2 = new ethers.Contract(
-  GogeToken2.address,
-  GogeToken2.abi,
-  provider
-);
+import { useAccount } from 'wagmi'
+//import { wagmiClient, provider } from "../pages/clientConfig";
+import { useProvider } from 'wagmi'
 
 // setup Migration component
 const Migration = () => {
-  const [status, setStatus] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [migrated, setMigrated] = useState(false);
-  const [wallet, setWallet] = useState("");
-  const [web3Provider, setProvider] = useState(null) as any;
-  const { width, height } = useWindowSize();
-  const [balanceV1, setBalanceV1] = useState("0.0");
-  const [balanceV2, setBalanceV2] = useState("0.0");
+    const [status, setStatus] = useState("");
+    const [connected, setConnected] = useState(false);
+    const [migrated, setMigrated] = useState(false);
+    const [wallet, setWallet] = useState("");
+    const [web3Provider, setProvider] = useState(null) as any;
+    const { width, height } = useWindowSize();
+    const [balanceV1, setBalanceV1] = useState("0.0");
+    const [balanceV2, setBalanceV2] = useState("0.0");
 
-  async function connect() {
-    const ethereum = (window as any).ethereum;
-  
-    if (ethereum) {
-      // grab first value of accounts array returned
-      [account] = await ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      setWallet(account);
+    const { address, isConnected, isDisconnected } = useAccount()
+    const provider = useProvider() // wagmi hook
 
-      const balV1:string = ethers.utils.formatEther(await contractV1.balanceOf(account));
-      setBalanceV1(balV1);
+    // get GOGE V1 token contract
+    const contractV1 = new ethers.Contract(
+        GogeToken1.address,
+        GogeToken1.abi,
+        provider
+    );
 
-      const balV2:string = ethers.utils.formatEther(await contractV2.balanceOf(account));
-      setBalanceV2(balV2);
+    // get GOGE V2 token contract
+    const contractV2 = new ethers.Contract(
+        GogeToken2.address,
+        GogeToken2.abi,
+        provider
+    );
 
-      const web3Provider = new ethers.providers.Web3Provider(ethereum); 
-      setProvider(web3Provider);
-      console.log(web3Provider.getNetwork());
+    async function connect() {
+        //const ethereum = (window as any).ethereum;
+        if (isConnected) {
+            // // grab first value of accounts array returned
+            // [account] = await ethereum.request({
+            //     method: "eth_requestAccounts",
+            // });
+            // setWallet(account);
 
-      setConnected(true);
+            const balV1: string = ethers.utils.formatEther(await contractV1.balanceOf(address));
+            setBalanceV1(balV1);
 
-      //update status based on amount of V1 tokens
-      if(balV1 == '0.0'){
-        setStatus("ConnectedNoTokens");
-      } else { 
-        setStatus('ConnectedTokens'); 
-      }
+            const balV2: string = ethers.utils.formatEther(await contractV2.balanceOf(address));
+            setBalanceV2(balV2);
 
-    } else {
-      console.log("Please install Wallet");
+            // //const web3Provider = new ethers.providers.Web3Provider(ethereum);
+            // setProvider(provider);
+            // console.log(provider.getNetwork());
+
+            // setConnected(true);
+
+            // //update status based on amount of V1 tokens
+            // if (balV1 == '0.0') {
+            //     setStatus("ConnectedNoTokens");
+            // } else {
+            //     setStatus('ConnectedTokens');
+            // }
+
+        }
     }
-  }
-  
-  async function migrate() {
 
-    if(web3Provider !== null && wallet.length > 0) {
-      // check balance
-      const balV1:ethers.BigNumber = await contractV1.balanceOf(wallet);
-      // check price feed given the balance
+    async function migrate() {
 
-      // if greater than equivalent amount of $2, replace zero with price feed results
-      if(balV1.gt(0)) {
-        const signer = web3Provider.getSigner();
-        const approvalTx = await contractV1.connect(signer).approve(GogeToken2.address, balV1);
-        setStatus("Approving");
-        // wait until transaction is mined.
-        await approvalTx.wait();
+        if (web3Provider !== null && isConnected) {
+            // check balance
+            const balV1: ethers.BigNumber = await contractV1.balanceOf(address);
+            // check price feed given the balance
 
-        setStatus("WaitingConfirmation");
-        
-        const migrateTx = await contractV2.connect(signer).migrate();
-        // wait until transaction is mined.
+            // if greater than equivalent amount of $2, replace zero with price feed results
+            if (balV1.gt(0)) {
+                const signer = web3Provider.getSigner();
+                const approvalTx = await contractV1.connect(signer).approve(GogeToken2.address, balV1);
+                setStatus("Approving");
+                // wait until transaction is mined.
+                await approvalTx.wait();
 
-        setStatus("Migrating");
+                setStatus("WaitingConfirmation");
 
-        await migrateTx.wait();
+                const migrateTx = await contractV2.connect(signer).migrate();
+                // wait until transaction is mined.
 
-        const balV2 = ethers.utils.formatEther(await contractV2.balanceOf(wallet));
-        setBalanceV2(balV2);
-        setMigrated(true);
-        setStatus("Migrated")
-      } else {
-        setBalanceV1("Insufficient GOGE V1 balance!");
-      }
+                setStatus("Migrating");
+
+                await migrateTx.wait();
+
+                const balV2 = ethers.utils.formatEther(await contractV2.balanceOf(address));
+                setBalanceV2(balV2);
+                setMigrated(true);
+                setStatus("Migrated")
+            } else {
+                setBalanceV1("Insufficient GOGE V1 balance!");
+            }
+        }
     }
-  }
 
-  return (
-      <>
-        {migrated ? <Confetti /> : null}
+    return (
+        <>
+            {migrated ? <Confetti /> : null}
 
-        <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
-              <div className="mb-2 sm:mb-0">
-                <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
-              </div>
-              <div className="mb-2 sm:mb-0">
-                <Image src={Rainbow} className="inline" alt="rainbow" />
-              </div>
-              <div className="mt-5 flex flex-col items-center">
-                <div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>
-              </div>
-          </nav>
-    
-          <div className="top-migration-section px-10">
-              <div className="w-2/6 xs:w-5/6 sm:w-4/6 md:w-2/6 lg:w-2/6 xl:w-2/6 py-7 m-auto text-center font-semibold"><span>Goge Migration Page</span><br /><span className="text-sm">Migrate your v1 tokens for v2 tokens.</span></div>
-          </div>
+            <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
+                <div className="mb-2 sm:mb-0">
+                    <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
+                </div>
+                <div className="mb-2 sm:mb-0">
+                    <Image src={Rainbow} className="inline" alt="rainbow" />
+                </div>
+                <div className="mt-5 flex flex-col items-center">
+                    {/* <div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div> */}
+                    <ConnectButton />
+                </div>
+            </nav>
 
-          <div className="flex pt-28 bg-white">
-              <div className="m-auto w-1/6 xs:w-5/6 sm:w-4/6 md:w-1/6 lg:w-1/6 xl:w-1/6">
-                  <div className="migrate-box">
-                      <div className="px-4 py-5 sm:p-6">
-                          <div className="mt-2 max-w-xl text-sm">
-                            {
-                              migrated ? 
-                                <div>
-                                  <h1 className="font-bold text-purple-700">GOGE V2 Balance:</h1>
-                                  <h2 className="text-truncate text-purple-700">{balanceV2}</h2>
-                                </div>
-                                :
-                                <div>
-                                  <h1 className="font-bold text-purple-700">Migratable V1 Tokens:</h1>
-                                  <h2 className="text-truncate text-purple-700">{balanceV1}</h2>
-                                </div>
-                            }
-                          </div>
-                          <div className="mt-5 flex flex-col items-center">
-                              <button
-                              className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
-                              type="button"
-                              onClick={connected ? migrate : connect}
-                              disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
-                              >
-                                { 
-                                  (!status) ? "Connect Wallet" : 
-                                  (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" : 
-                                  (status == 'ConnectedTokens') ? 'Migrate' : 
-                                  (status == 'Approving') ? 'Approving...' : 
-                                  (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' : 
-                                  (status == 'Migrating') ? 'Migrating...' : 
-                                  (status == 'Migrated') ? 'Tokens Migrated!' : 
-                                   ''}
-                              </button>
-                          </div>
-                      </div>
-                  </div>
-                  <br></br>
-                  <div className="text-center text-sm">
-                      Disclaimer: You must be holding more than $2 of the v1 token to migrate
-                  </div>
-              </div>
-          </div>
-      </>
-  )
+            <div className="top-migration-section px-10">
+                <div className="w-2/6 xs:w-5/6 sm:w-4/6 md:w-2/6 lg:w-2/6 xl:w-2/6 py-7 m-auto text-center font-semibold"><span>Goge Migration Page</span><br /><span className="text-sm">Migrate your v1 tokens for v2 tokens.</span></div>
+            </div>
+
+            <div className="flex pt-28 bg-white">
+                <div className="m-auto w-1/6 xs:w-5/6 sm:w-4/6 md:w-1/6 lg:w-1/6 xl:w-1/6">
+                    <div className="migrate-box">
+                        <div className="px-4 py-5 sm:p-6">
+                            <div className="mt-2 max-w-xl text-sm">
+                                {
+                                    migrated ?
+                                        <div>
+                                            <h1 className="font-bold text-purple-700">GOGE V2 Balance:</h1>
+                                            <h2 className="text-truncate text-purple-700">{balanceV2}</h2>
+                                        </div>
+                                        :
+                                        <div>
+                                            <h1 className="font-bold text-purple-700">Migratable V1 Tokens:</h1>
+                                            <h2 className="text-truncate text-purple-700">{balanceV1}</h2>
+                                        </div>
+                                }
+                            </div>
+                            <div className="mt-5 flex flex-col items-center">
+                                <button
+                                    className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
+                                    type="button"
+                                    onClick={connected ? migrate : connect}
+                                    disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
+                                >
+                                    {
+                                        (!status) ? "Connect Wallet" :
+                                            (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" :
+                                                (status == 'ConnectedTokens') ? 'Migrate' :
+                                                    (status == 'Approving') ? 'Approving...' :
+                                                        (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' :
+                                                            (status == 'Migrating') ? 'Migrating...' :
+                                                                (status == 'Migrated') ? 'Tokens Migrated!' :
+                                                                    ''}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <br></br>
+                    <div className="text-center text-sm">
+                        Disclaimer: You must be holding more than $2 of the v1 token to migrate
+                    </div>
+                </div>
+            </div>
+        </>
+    )
 
 }
 

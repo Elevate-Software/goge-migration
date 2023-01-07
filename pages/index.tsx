@@ -5,13 +5,22 @@ import Migration from '../components/Migration'
 import Logo1 from "../public/goge_logo.png";
 import Logo2 from "../public/goge_logo_2.png";
 import Rainbow from "../public/rainbow.png";
+import { chains, wagmiClient } from "./clientConfig";
+import { createClient, configureChains, WagmiConfig } from 'wagmi';
+import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 
 export default function Home() {
   return (
     <>
-      <div className='bg-white h-screen'>
-        <Migration />
-      </div>
+      <WagmiConfig client={wagmiClient}>
+        <RainbowKitProvider chains={chains}>
+
+          <div className='bg-white h-screen'>
+            <Migration />
+          </div>
+          
+        </RainbowKitProvider>
+      </WagmiConfig>
     </>
   )
 }
