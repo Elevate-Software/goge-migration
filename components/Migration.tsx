@@ -10,11 +10,8 @@ import Image from 'next/image'
 import Logo1 from "../public/goge_logo.png";
 import Logo2 from "../public/goge_logo_2.png";
 import Rainbow from "../public/rainbow.png";
-import { truncate } from 'truncate-ethereum-address';
-import { stat } from "fs";
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
@@ -28,12 +25,12 @@ const Migration = () => {
     const [connected, setConnected] = useState(false);
     const [migrated, setMigrated] = useState(false);
     const [wallet, setWallet] = useState("");
-    const [web3Provider, setProvider] = useState(null) as any;
+    const [web3Provider, setProvider] = useState(null) as any; // not this, ethersJS
     const { width, height } = useWindowSize();
     const [balanceV1, setBalanceV1] = useState("0.0");
     const [balanceV2, setBalanceV2] = useState("0.0");
 
-    const { address, isConnected, isDisconnected } = useAccount()
+    const { address, isConnected, isDisconnected } = useAccount() // wagmi hook
     const provider = useProvider() // wagmi hook
 
     // get GOGE V1 token contract
@@ -83,7 +80,7 @@ const Migration = () => {
 
     async function migrate() {
 
-        if (web3Provider !== null && isConnected) {
+        if (provider !== null && isConnected) {
             // check balance
             const balV1: ethers.BigNumber = await contractV1.balanceOf(address);
             // check price feed given the balance
@@ -163,13 +160,13 @@ const Migration = () => {
                                 >
                                     {
                                         (!status) ? "Connect Wallet" :
-                                            (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" :
-                                                (status == 'ConnectedTokens') ? 'Migrate' :
-                                                    (status == 'Approving') ? 'Approving...' :
-                                                        (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' :
-                                                            (status == 'Migrating') ? 'Migrating...' :
-                                                                (status == 'Migrated') ? 'Tokens Migrated!' :
-                                                                    ''}
+                                        (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" :
+                                        (status == 'ConnectedTokens') ? 'Migrate' :
+                                        (status == 'Approving') ? 'Approving...' :
+                                        (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' :
+                                        (status == 'Migrating') ? 'Migrating...' :
+                                        (status == 'Migrated') ? 'Tokens Migrated!' :
+                                    ''}
                                 </button>
                             </div>
                         </div>

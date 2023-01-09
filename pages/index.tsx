@@ -9,16 +9,17 @@ import { chains, wagmiClient } from "./clientConfig";
 import { createClient, configureChains, WagmiConfig } from 'wagmi';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 
+
 export default function Home() {
   return (
     <>
       <WagmiConfig client={wagmiClient}>
-        <RainbowKitProvider chains={chains}>
+        <RainbowKitProvider chains={chains} coolMode modalSize="compact">
 
           <div className='bg-white h-screen'>
             <Migration />
           </div>
-          
+
         </RainbowKitProvider>
       </WagmiConfig>
     </>
