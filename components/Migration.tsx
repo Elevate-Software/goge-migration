@@ -18,6 +18,10 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi'
 //import { wagmiClient, provider } from "../pages/clientConfig";
 import { useProvider } from 'wagmi'
+import { useSigner } from 'wagmi'
+import { useContractWrite, usePrepareContractWrite } from 'wagmi'
+import { useContractRead } from 'wagmi'
+
 
 // setup Migration component
 const Migration = () => {
@@ -32,6 +36,8 @@ const Migration = () => {
 
     const { address, isConnected, isDisconnected } = useAccount() // wagmi hook
     const provider = useProvider() // wagmi hook
+    const { data: signer } = useSigner() // wagmi
+    
 
     // get GOGE V1 token contract
     const contractV1 = new ethers.Contract(
@@ -46,6 +52,25 @@ const Migration = () => {
         GogeToken2.abi,
         provider
     );
+
+    // check balance of v1 tokens
+    const { data, isError, isLoading } = useContractRead({
+        address: GogeToken1.address,
+        abi: GogeToken1.abi,
+        functionName: 'balanceOf',
+        args: [address],
+        onSettled(data, error) {
+            console.log('Settled', { data, error })
+        },
+    })
+    //const balV1: data.
+    
+    // get approval from v1 contract
+    const { config } = usePrepareContractWrite({
+        address: GogeToken1.address,
+        abi: GogeToken1.abi,
+        functionName: 'approve',
+    })
 
     async function connect() {
         //const ethereum = (window as any).ethereum;
@@ -69,11 +94,11 @@ const Migration = () => {
             // setConnected(true);
 
             // //update status based on amount of V1 tokens
-            // if (balV1 == '0.0') {
-            //     setStatus("ConnectedNoTokens");
-            // } else {
-            //     setStatus('ConnectedTokens');
-            // }
+            if (balV1 == '0.0') {
+                setStatus("ConnectedNoTokens");
+            } else {
+                setStatus('ConnectedTokens');
+            }
 
         }
     }
@@ -81,13 +106,12 @@ const Migration = () => {
     async function migrate() {
 
         if (provider !== null && isConnected) {
-            // check balance
+
             const balV1: ethers.BigNumber = await contractV1.balanceOf(address);
-            // check price feed given the balance
 
             // if greater than equivalent amount of $2, replace zero with price feed results
             if (balV1.gt(0)) {
-                const signer = web3Provider.getSigner();
+                const signer = provider.getSigner();
                 const approvalTx = await contractV1.connect(signer).approve(GogeToken2.address, balV1);
                 setStatus("Approving");
                 // wait until transaction is mined.
@@ -155,7 +179,7 @@ const Migration = () => {
                                 <button
                                     className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
                                     type="button"
-                                    onClick={connected ? migrate : connect}
+                                    onClick={isConnected ? migrate : connect}
                                     disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
                                 >
                                     {
