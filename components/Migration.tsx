@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Contract, ethers } from "ethers";
 import GogeToken1 from "../pages/GogeTokenV1.json";
@@ -12,13 +13,43 @@ import Logo2 from "../public/goge_logo_2.png";
 import Rainbow from "../public/rainbow.png";
 import { truncate } from 'truncate-ethereum-address';
 import { stat } from "fs";
+import { Component } from "react";
+// Web3Modal import
+import { Web3Modal } from "@web3modal/react";
+import { EthereumClient, modalConnectors, walletConnectProvider } from '@web3modal/ethereum'
+import { Web3Button, Web3NetworkSwitch } from '@web3modal/react'
 
 
-const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/bsc_testnet_chapel");
+// Wagmi import
+import { configureChains, createClient, WagmiConfig } from 'wagmi'
+import { bscTestnet, bsc } from "wagmi/chains";
+
+if(!process.env.WALLET_CONNECT_PROJECT_ID){
+    throw new Error('You need to provide WALLET_CONNECT_PROJECT_ID env variable')
+}
+
+const projectId = process.env.WALLET_CONNECT_PROJECT_ID
+
+
+const chains = [bscTestnet]
+const { provider } = configureChains(chains, [walletConnectProvider({ projectId })])
+export const wagmiClient = createClient({
+  autoConnect: true,
+  connectors: modalConnectors({
+    appName: 'GogeMigration',
+    chains
+  }),
+  provider
+})
+
+export const ethereumClient = new EthereumClient(wagmiClient, chains)
+
+
+//const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/bsc_testnet_chapel");
 let account = ''
 
 // get GOGE V1 token contract
-const contractV1 = new ethers.Contract(
+/*const contractV1 = new ethers.Contract(
   GogeToken1.address,
   GogeToken1.abi,
   provider
@@ -29,7 +60,7 @@ const contractV2 = new ethers.Contract(
   GogeToken2.address,
   GogeToken2.abi,
   provider
-);
+);*/
 
 // setup Migration component
 const Migration = () => {
@@ -41,11 +72,16 @@ const Migration = () => {
   const { width, height } = useWindowSize();
   const [balanceV1, setBalanceV1] = useState("0.0");
   const [balanceV2, setBalanceV2] = useState("0.0");
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+      setReady(true)
+    }, [])
 
   async function connect() {
     const ethereum = (window as any).ethereum;
   
-    if (ethereum) {
+    /*if (ethereum) {
       // grab first value of accounts array returned
       [account] = await ethereum.request({
         method: "eth_requestAccounts",
@@ -73,12 +109,12 @@ const Migration = () => {
 
     } else {
       console.log("Please install Wallet");
-    }
+    }*/
   }
   
   async function migrate() {
 
-    if(web3Provider !== null && wallet.length > 0) {
+    /*if(web3Provider !== null && wallet.length > 0) {
       // check balance
       const balV1:ethers.BigNumber = await contractV1.balanceOf(wallet);
       // check price feed given the balance
@@ -107,7 +143,7 @@ const Migration = () => {
       } else {
         setBalanceV1("Insufficient GOGE V1 balance!");
       }
-    }
+    }*/
   }
 
   return (
@@ -148,7 +184,7 @@ const Migration = () => {
                                 </div>
                             }
                           </div>
-                          <div className="mt-5 flex flex-col items-center">
+                          {/*<div className="mt-5 flex flex-col items-center">
                               <button
                               className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
                               type="button"
@@ -165,6 +201,11 @@ const Migration = () => {
                                   (status == 'Migrated') ? 'Tokens Migrated!' : 
                                    ''}
                               </button>
+                                </div>*/}
+                          <div className="pt-4 flex items-center">
+                              <div className="pr-4">
+                                <Web3Button icon="show" label="Connect Wallet" balance="show" />
+                              </div>
                           </div>
                       </div>
                   </div>
