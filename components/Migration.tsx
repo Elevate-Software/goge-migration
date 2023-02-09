@@ -21,7 +21,7 @@ import { Web3Button, Web3NetworkSwitch } from '@web3modal/react'
 
 
 // Wagmi import
-import { configureChains, createClient, WagmiConfig } from 'wagmi'
+import { configureChains, createClient, WagmiConfig, useAccount, useBalance, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi'
 import { bscTestnet, bsc } from "wagmi/chains";
 
 if(!process.env.WALLET_CONNECT_PROJECT_ID){
@@ -64,6 +64,7 @@ const contractV2 = new ethers.Contract(
 
 // setup Migration component
 const Migration = () => {
+  const [enabledBalance, setEnabledBalance] = useState(false);
   const [status, setStatus] = useState("");
   const [connected, setConnected] = useState(false);
   const [migrated, setMigrated] = useState(false);
@@ -74,9 +75,50 @@ const Migration = () => {
   const [balanceV2, setBalanceV2] = useState("0.0");
   const [ready, setReady] = useState(false)
 
+  // Get address using Wagmi
+  const { address: addressWallet } = useAccount({
+    onConnect(data) {
+      console.log('Success addressWallet:', data.address);
+    },
+    onDisconnect() {
+      console.log('Disconnected')
+    },
+  }) as any;
+
+  // Get balance using Wagmi
+  const { data: balanceWallet } = useBalance({
+    address: addressWallet,
+    formatUnits: 'ether',
+    onSuccess(data) {
+      console.log('Success balanceWallet:', data.formatted.substring(0,5))
+    },
+    onError(error) {
+      console.log('Error balanceWallet', error)
+    },
+  })
+
+  const { data: nftBalance } = useContractRead({
+    address: '0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428',
+    abi: GogeToken1.abi,
+    functionName: 'balanceOf',
+    args: [addressWallet],
+    enabled: enabledBalance,
+    watch: true,
+    onSuccess(data) {
+      setBalanceV1(Number(data).toString())
+      console.log('Success V1 Balance:', balanceV1);
+    },
+    onError(error) {
+      console.log('Error Balance:', error)
+    },
+  })
+
   useEffect(() => {
-      setReady(true)
-    }, [])
+    if(!!addressWallet) {
+      setEnabledBalance(true);
+    } else {
+    }
+  }, [addressWallet])
 
   async function connect() {
     const ethereum = (window as any).ethereum;
@@ -158,7 +200,13 @@ const Migration = () => {
                 <Image src={Rainbow} className="inline" alt="rainbow" />
               </div>
               <div className="mt-5 flex flex-col items-center">
-                <div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>
+                {/*<div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>*/}
+                <div className="pr-4">
+                  <Web3Button icon="show" label="Connect Wallet" balance="hide" />
+
+                  <Web3NetworkSwitch />
+
+                </div>
               </div>
           </nav>
     
@@ -203,9 +251,7 @@ const Migration = () => {
                               </button>
                                 </div>*/}
                           <div className="pt-4 flex items-center">
-                              <div className="pr-4">
-                                <Web3Button icon="show" label="Connect Wallet" balance="show" />
-                              </div>
+                            <Web3Button icon="show" label="Connect Wallet" balance="show" />
                           </div>
                       </div>
                   </div>
