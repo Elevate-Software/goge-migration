@@ -2,7 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { Contract, ethers } from "ethers";
+import { BigNumber, Contract, ethers } from "ethers";
 import GogeToken1 from "../pages/GogeTokenV1.json";
 import GogeToken2 from "../pages/GogeTokenV2.json";
 import useWindowSize from 'react-use/lib/useWindowSize';
@@ -44,23 +44,8 @@ export const wagmiClient = createClient({
 
 export const ethereumClient = new EthereumClient(wagmiClient, chains)
 
-
 //const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/bsc_testnet_chapel");
 let account = ''
-
-// get GOGE V1 token contract
-/*const contractV1 = new ethers.Contract(
-  GogeToken1.address,
-  GogeToken1.abi,
-  provider
-);
-
-// get GOGE V2 token contract
-const contractV2 = new ethers.Contract(
-  GogeToken2.address,
-  GogeToken2.abi,
-  provider
-);*/
 
 // setup Migration component
 const Migration = () => {
@@ -85,78 +70,47 @@ const Migration = () => {
     },
   }) as any;
 
-  // Get balance using Wagmi
-  const { data: balanceWallet } = useBalance({
+  // Get V1 balance using Wagmi
+  const { data: balv1 } = useBalance({
     address: addressWallet,
+    token: '0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428',
+    enabled: enabledBalance,
     formatUnits: 'ether',
     onSuccess(data) {
-      console.log('Success balanceWallet:', data.formatted.substring(0,5))
+      setBalanceV1(data.formatted.substring(0,25))
+      console.log('Success balanceWallet:', balanceV1)
     },
     onError(error) {
       console.log('Error balanceWallet', error)
     },
   })
 
-  const { data: nftBalance } = useContractRead({
-    address: '0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428',
-    abi: GogeToken1.abi,
-    functionName: 'balanceOf',
-    args: [addressWallet],
+  //Get V2 balance using Wagmi
+  const { data: balv2 } = useBalance({
+    address: addressWallet,
+    token: '0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428',
     enabled: enabledBalance,
-    watch: true,
+    formatUnits: 'ether',
     onSuccess(data) {
-      setBalanceV1(Number(data).toString())
-      console.log('Success V1 Balance:', balanceV1);
+      setBalanceV1(data.formatted.substring(0,25))
+      console.log('Success balanceWallet:', balanceV2)
     },
     onError(error) {
-      console.log('Error Balance:', error)
+      console.log('Error balanceWallet', error)
     },
   })
 
   useEffect(() => {
     if(!!addressWallet) {
       setEnabledBalance(true);
+      setConnected(true);
     } else {
     }
   }, [addressWallet])
-
-  async function connect() {
-    const ethereum = (window as any).ethereum;
-  
-    /*if (ethereum) {
-      // grab first value of accounts array returned
-      [account] = await ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      setWallet(account);
-
-      const balV1:string = ethers.utils.formatEther(await contractV1.balanceOf(account));
-      setBalanceV1(balV1);
-
-      const balV2:string = ethers.utils.formatEther(await contractV2.balanceOf(account));
-      setBalanceV2(balV2);
-
-      const web3Provider = new ethers.providers.Web3Provider(ethereum); 
-      setProvider(web3Provider);
-      console.log(web3Provider.getNetwork());
-
-      setConnected(true);
-
-      //update status based on amount of V1 tokens
-      if(balV1 == '0.0'){
-        setStatus("ConnectedNoTokens");
-      } else { 
-        setStatus('ConnectedTokens'); 
-      }
-
-    } else {
-      console.log("Please install Wallet");
-    }*/
-  }
   
   async function migrate() {
 
-    /*if(web3Provider !== null && wallet.length > 0) {
+    if(web3Provider !== null && wallet.length > 0) {
       // check balance
       const balV1:ethers.BigNumber = await contractV1.balanceOf(wallet);
       // check price feed given the balance
@@ -203,9 +157,6 @@ const Migration = () => {
                 {/*<div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>*/}
                 <div className="pr-4">
                   <Web3Button icon="show" label="Connect Wallet" balance="hide" />
-
-                  <Web3NetworkSwitch />
-
                 </div>
               </div>
           </nav>
