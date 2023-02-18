@@ -100,6 +100,7 @@ const Migration = () => {
     mode: "prepared",
     onSuccess() {
         console.log(`Successfully migrated V1 tokens to V2 for ${wallet}`)
+        console.log('V1 Balance: ', balanceV1);
     },
     onError(error) {
         console.error('Failed to perform migration', error)
@@ -123,7 +124,7 @@ const Migration = () => {
                 <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
               </div>
               <div className="mb-2 sm:mb-0">
-                <Image src={Rainbow} className="inline" alt="rainbow" />
+                <Image src={Rainbow} className="inline xs:relative sm:absolute md:absolute lg:absolute  xl:absolute top-5" alt="rainbow" />
               </div>
               <div className="mt-5 flex flex-col items-center">
                 {/*<div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>*/}
@@ -143,7 +144,7 @@ const Migration = () => {
                       <div className="m-auto px-4 py-5 sm:p-6">
                           <div className="mt-2 max-w-xl text-sm">
                             {
-                              migrateSuccess && ethers.utils.parseUnits(balanceV1).isZero() ? 
+                              migrateSuccess ? 
                                 <div>
                                   <h1 className="font-bold text-purple-700">GOGE V2 Balance:</h1>
                                   <h2 className="text-truncate text-purple-700">{balanceV2}</h2>
@@ -157,6 +158,7 @@ const Migration = () => {
                           </div>
                           <div className="pt-4 flex content-center">
                             <button className="inline-flex m-auto migrate-button px-4 py-2 sm:text-sm"
+                                disabled={!isConnected ? true : (balanceV1 == '0.0') ? true : migrateSuccess ? true : false}
                                 onClick={async () => {
                                     await approveTx?.()
                                     .catch(() => {
@@ -170,7 +172,7 @@ const Migration = () => {
                                     )
                                 }}
                             >
-                                Migrate Tokens
+                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : "Migrate Tokens"}
                             </button>
                           </div>
                       </div>
