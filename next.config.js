@@ -3,7 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost']
+    domains: ['localhost'],
+    unoptimized: true
   },
   env: {
     NEXT_PUBLIC_META_RAFT_MINT_PRICE: process.env.NEXT_PUBLIC_META_RAFT_MINT_PRICE,
