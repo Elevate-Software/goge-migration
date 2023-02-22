@@ -103,7 +103,6 @@ const Migration = () => {
     mode: "prepared",
     onSuccess() {
         console.log(`Successfully migrated V1 tokens to V2 for ${wallet}`)
-        console.log('V1 Balance: ', balanceV1);
     },
     onError(error) {
         console.error('Failed to perform migration', error)

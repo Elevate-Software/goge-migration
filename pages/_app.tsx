@@ -4,7 +4,6 @@ import { Web3Modal } from "@web3modal/react";
 import { EthereumClient, modalConnectors, walletConnectProvider } from '@web3modal/ethereum'
 import { configureChains, createClient, WagmiConfig } from 'wagmi'
 import { bsc, bscTestnet } from "wagmi/chains";
-import { publicProvider } from "wagmi/providers/public"
 import { AppProps } from 'next/app';
 
 // 1. Get projectID at https://cloud.walletconnect.com
@@ -15,7 +14,7 @@ if (!process.env.WALLET_CONNECT_PROJECT_ID) {
 const projectId = process.env.WALLET_CONNECT_PROJECT_ID
 
 // 2. Configure wagmi client
-const { chains, provider } = configureChains([bsc, bscTestnet], [walletConnectProvider({ projectId }), publicProvider()])
+const { chains, provider } = configureChains([bsc, bscTestnet], [walletConnectProvider({ projectId })])
 export const wagmiClient = createClient({
   autoConnect: true,
   connectors: modalConnectors({
