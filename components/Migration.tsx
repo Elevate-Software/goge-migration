@@ -9,6 +9,7 @@ import Image from 'next/image'
 import Logo1 from "../public/goge_logo.png";
 import Logo2 from "../public/goge_logo_2.png";
 import Rainbow from "../public/rainbow.png";
+//
 
 // Web3 connect wallet import
 import { Web3Button } from '@web3modal/react'
