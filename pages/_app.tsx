@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Web3Modal } from "@web3modal/react";
 import { EthereumClient, modalConnectors, walletConnectProvider } from '@web3modal/ethereum'
 import { configureChains, createClient, WagmiConfig } from 'wagmi'
-import { bscTestnet, mainnet } from "wagmi/chains";
+import { bscTestnet, mainnet, bsc} from "wagmi/chains";
 import { AppProps } from 'next/app';
 
 // 1. Get projectID at https://cloud.walletconnect.com
