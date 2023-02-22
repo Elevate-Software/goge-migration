@@ -65,7 +65,7 @@ const Migration = () => {
     abi: GogeToken1.abi,
     functionName: "approve",
     args:[GogeToken2.address, ethers.utils.parseUnits(balanceV1)],
-    enabled: false, // we do not want this to immediately run
+    enabled: isConnected && !ethers.utils.parseUnits(balanceV1).isZero(),
     onSuccess(data){
         console.log(`Prepared ${data.functionName} to approve ${balanceV1} V1 tokens for ${wallet}`)
     },
@@ -89,7 +89,7 @@ const Migration = () => {
     address: "0x1618efC9867F3Bd7D2bf80ce5f7E6174Fd3bEf96",
     abi: GogeToken2.abi,
     functionName: "migrate",
-    enabled: false, // we do not want this to immediately run
+    enabled: isConnected && approveSuccess, // unless disabled, this will always run immediately!
     onSuccess(data){
         console.log(`Prepared ${data.functionName} to migrate tokens for ${wallet}`)
     },
