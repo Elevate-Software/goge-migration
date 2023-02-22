@@ -4,6 +4,7 @@ import { ethers } from "ethers";
 import GogeToken1 from "../pages/GogeTokenV1.json";
 import GogeToken2 from "../pages/GogeTokenV2.json";
 import Confetti from 'react-confetti';
+import useWindowSize from 'react-use/lib/useWindowSize'
 import Image from 'next/image'
 import Logo1 from "../public/goge_logo.png";
 import Logo2 from "../public/goge_logo_2.png";
@@ -18,6 +19,7 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 const Migration = () => {
   const [balanceV1, setBalanceV1] = useState("0.0");
   const [balanceV2, setBalanceV2] = useState("0.0");
+  const { width, height } = useWindowSize();
 
   // Get address using Wagmi
   const { isConnected: isConnected, address: wallet } = useAccount({
@@ -117,7 +119,7 @@ const Migration = () => {
 
   return (
       <>
-        {migrateSuccess ? <Confetti /> : null}
+        {migrateSuccess ? <Confetti width={width} height={height}/> : null}
 
         <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
               <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
