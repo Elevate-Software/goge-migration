@@ -120,17 +120,16 @@ const Migration = () => {
         {migrateSuccess ? <Confetti /> : null}
 
         <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
-              <div className="mb-2 sm:mb-0">
-                <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
+              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
+                <Image src={Logo2} className="inline-block pb-3 pr-1" alt="goge" /><Image className="pl-1 pb-3 inline-block" src={Logo1} alt="dog" />
               </div>
-              <div className="mb-2 sm:mb-0">
-                <Image src={Rainbow} className="inline xs:relative sm:absolute md:absolute lg:absolute  xl:absolute top-5" alt="rainbow" />
+              <div className="xs:w-12/12 sm:w-12/12 md:w-8/12 lg:w-8/12 xl:w-8/12 pt-2">
+                <Image src={Rainbow} className="mx-auto xs:pb-3 sm:pb-3 md:pb-0 lg:pb-0 xl:pb-0" alt="rainbow" />
               </div>
-              <div className="mt-5 flex flex-col items-center">
-                {/*<div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>*/}
-                <div className="pr-4">
+              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
+                <span className="align-baseline xs:float-none sm:float-none md:float-right lg:float-right xl:float-right float-right">
                   <Web3Button icon="show" label="Connect Wallet" balance="hide" />
-                </div>
+                </span>
               </div>
           </nav>
     
@@ -187,22 +186,3 @@ const Migration = () => {
 }
 
 export default Migration;
-
-/*<div className="mt-5 flex flex-col items-center">
-    <button
-    className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
-    type="button"
-    onClick={connected ? migrate : connect}
-    disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
-    >
-    { 
-        (!status) ? "Connect Wallet" : 
-        (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" : 
-        (status == 'ConnectedTokens') ? 'Migrate' : 
-        (status == 'Approving') ? 'Approving...' : 
-        (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' : 
-        (status == 'Migrating') ? 'Migrating...' : 
-        (status == 'Migrated') ? 'Tokens Migrated!' : 
-        ''}
-    </button>
-</div>*/
