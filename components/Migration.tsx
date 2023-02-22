@@ -4,6 +4,7 @@ import { ethers } from "ethers";
 import GogeToken1 from "../pages/GogeTokenV1.json";
 import GogeToken2 from "../pages/GogeTokenV2.json";
 import Confetti from 'react-confetti';
+import useWindowSize from 'react-use/lib/useWindowSize'
 import Image from 'next/image'
 import Logo1 from "../public/goge_logo.png";
 import Logo2 from "../public/goge_logo_2.png";
@@ -18,6 +19,7 @@ import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } fro
 const Migration = () => {
   const [balanceV1, setBalanceV1] = useState("0.0");
   const [balanceV2, setBalanceV2] = useState("0.0");
+  const { width, height } = useWindowSize();
 
   // Get address using Wagmi
   const { isConnected: isConnected, address: wallet } = useAccount({
@@ -62,7 +64,7 @@ const Migration = () => {
     abi: GogeToken1.abi,
     functionName: "approve",
     args:[GogeToken2.address, ethers.utils.parseUnits(balanceV1)],
-    enabled: isConnected && !ethers.utils.parseUnits(balanceV1).isZero(),
+    enabled: false, // we do not want this to immediately run
     onSuccess(data){
         console.log(`Prepared ${data.functionName} to approve ${balanceV1} V1 tokens for ${wallet}`)
     },
@@ -86,7 +88,7 @@ const Migration = () => {
     address: "0x1618efC9867F3Bd7D2bf80ce5f7E6174Fd3bEf96",
     abi: GogeToken2.abi,
     functionName: "migrate",
-    enabled: isConnected && approveSuccess, // unless disabled, this will always run immediately!
+    enabled: false, // we do not want this to immediately run
     onSuccess(data){
         console.log(`Prepared ${data.functionName} to migrate tokens for ${wallet}`)
     },
@@ -117,20 +119,19 @@ const Migration = () => {
 
   return (
       <>
-        {migrateSuccess ? <Confetti /> : null}
+        {migrateSuccess ? <Confetti width={width} height={height}/> : null}
 
         <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
-              <div className="mb-2 sm:mb-0">
-                <Image src={Logo2} className="inline" alt="goge" /><Image className="inline" src={Logo1} alt="dog" />
+              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
+                <Image src={Logo2} className="inline-block pb-3 pr-1" alt="goge" /><Image className="pl-1 pb-3 inline-block" src={Logo1} alt="dog" />
               </div>
-              <div className="mb-2 sm:mb-0">
-                <Image src={Rainbow} className="inline xs:relative sm:absolute md:absolute lg:absolute  xl:absolute top-5" alt="rainbow" />
+              <div className="xs:w-12/12 sm:w-12/12 md:w-8/12 lg:w-8/12 xl:w-8/12 pt-2">
+                <Image src={Rainbow} className="mx-auto xs:pb-3 sm:pb-3 md:pb-0 lg:pb-0 xl:pb-0" alt="rainbow" />
               </div>
-              <div className="mt-5 flex flex-col items-center">
-                {/*<div className='inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm' onClick={connect}>{account ? truncate(account) : 'Connect Wallet'}</div>*/}
-                <div className="pr-4">
+              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
+                <span className="align-baseline xs:float-none sm:float-none md:float-right lg:float-right xl:float-right float-right">
                   <Web3Button icon="show" label="Connect Wallet" balance="hide" />
-                </div>
+                </span>
               </div>
           </nav>
     
@@ -159,27 +160,25 @@ const Migration = () => {
                           <div className="pt-4 flex content-center">
                             <button className="inline-flex m-auto migrate-button px-4 py-2 sm:text-sm"
                                 disabled={!isConnected ? true : (balanceV1 == '0.0') ? true : migrateSuccess ? true : false}
-                                onClick={async () => {
-                                    await approveTx?.()
-                                    .catch(() => {
-                                        console.error('User rejected apporval!')
+                                onClick={ 
+                                  !approveSuccess ? 
+                                    async () => {
+                                      await approveTx?.()
+                                      .catch(() => {
+                                          console.error('User rejected approval!');
+                                      })
+                                    } : 
+                                    async () => {
+                                      await migrateTx?.()
+                                      .catch(() => {
+                                          console.error('User rejected migration!')
                                     })
-                                    .then(() =>
-                                        migrateTx?.()
-                                        .catch(() => {
-                                            console.error('User rejected migration!')
-                                        })
-                                    )
                                 }}
                             >
-                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : "Migrate Tokens"}
+                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : !approveSuccess ? "Approve Migration" : "Migrate Tokens"}
                             </button>
                           </div>
                       </div>
-                  </div>
-                  <br></br>
-                  <div className="text-center text-sm text-purple-500">
-                      Disclaimer: You must be holding more than $2 of the v1 token to migrate
                   </div>
               </div>
           </div>
@@ -189,22 +188,3 @@ const Migration = () => {
 }
 
 export default Migration;
-
-/*<div className="mt-5 flex flex-col items-center">
-    <button
-    className="inline-flex m-auto content-center migrate-button px-4 py-2 sm:text-sm"
-    type="button"
-    onClick={connected ? migrate : connect}
-    disabled={(status == 'ConnectedNoTokens') ? true : (status == 'Approving') ? true : (status == 'WaitingConfirmation') ? true : (status == 'Migrating') ? true : (status == 'Migrated') ? true : false}
-    >
-    { 
-        (!status) ? "Connect Wallet" : 
-        (status == 'ConnectedNoTokens') ? "No Tokens To Migrate" : 
-        (status == 'ConnectedTokens') ? 'Migrate' : 
-        (status == 'Approving') ? 'Approving...' : 
-        (status == 'WaitingConfirmation') ? 'Please Approve Migrate in MetaMask' : 
-        (status == 'Migrating') ? 'Migrating...' : 
-        (status == 'Migrated') ? 'Tokens Migrated!' : 
-        ''}
-    </button>
-</div>*/
