@@ -159,27 +159,25 @@ const Migration = () => {
                           <div className="pt-4 flex content-center">
                             <button className="inline-flex m-auto migrate-button px-4 py-2 sm:text-sm"
                                 disabled={!isConnected ? true : (balanceV1 == '0.0') ? true : migrateSuccess ? true : false}
-                                onClick={async () => {
-                                    await approveTx?.()
-                                    .catch(() => {
-                                        console.error('User rejected apporval!')
+                                onClick={ 
+                                  !approveSuccess ? 
+                                    async () => {
+                                      await approveTx?.()
+                                      .catch(() => {
+                                          console.error('User rejected approval!');
+                                      })
+                                    } : 
+                                    async () => {
+                                      await migrateTx?.()
+                                      .catch(() => {
+                                          console.error('User rejected migration!')
                                     })
-                                    .then(() =>
-                                        migrateTx?.()
-                                        .catch(() => {
-                                            console.error('User rejected migration!')
-                                        })
-                                    )
                                 }}
                             >
-                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : "Migrate Tokens"}
+                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : !approveSuccess ? "Approve Migration" : "Migrate Tokens"}
                             </button>
                           </div>
                       </div>
-                  </div>
-                  <br></br>
-                  <div className="text-center text-sm text-purple-500">
-                      Disclaimer: You must be holding more than $2 of the v1 token to migrate
                   </div>
               </div>
           </div>
