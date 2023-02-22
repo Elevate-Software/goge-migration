@@ -6,26 +6,29 @@ import GogeToken2 from "../pages/GogeTokenV2.json";
 import Confetti from 'react-confetti';
 import useWindowSize from 'react-use/lib/useWindowSize'
 import Image from 'next/image'
-import Logo1 from "../public/goge_logo.png";
-import Logo2 from "../public/goge_logo_2.png";
+import Link from 'next/link'
+import GogeDog from "../public/goge_logo_real.png";
+import GogeName from "../public/goge_logo.png";
 import Rainbow from "../public/rainbow.png";
-//
 
 // Web3 connect wallet import
 import { Web3Button } from '@web3modal/react'
 // Wagmi imports
 import { useAccount, useBalance, useContractWrite, usePrepareContractWrite } from 'wagmi'
+import { prepareWriteContract, writeContract } from '@wagmi/core'
 
 // setup Migration component
 const Migration = () => {
   const [balanceV1, setBalanceV1] = useState("0.0");
   const [balanceV2, setBalanceV2] = useState("0.0");
+  const [migrated, setMigration] = useState(false);
+  const [approved, setApproval] = useState(false);
   const { width, height } = useWindowSize();
 
   // Get address using Wagmi
-  const { isConnected: isConnected, address: wallet } = useAccount({
+  const { isConnected: connected, address: wallet } = useAccount({
     onConnect(data) {
-      console.log('Success wallet:', data.address);
+      console.log('Connected:', data.address);
     },
     onDisconnect() {
       console.log('Disconnected')
@@ -33,10 +36,10 @@ const Migration = () => {
   });
 
   // Get V1 balance using Wagmi
-  useBalance({
+  const {data: bal } = useBalance({
     address: wallet,
-    token: "0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428",
-    enabled: isConnected,
+    token: "0xa30d02c5cdb6a76e47ea0d65f369fd39618541fe",
+    enabled: connected,
     onSuccess(data) {
       setBalanceV1(data.formatted)
       console.log('Success V1 balance:', data.formatted)
@@ -49,8 +52,8 @@ const Migration = () => {
   //Get V2 balance using Wagmi
   useBalance({
     address: wallet,
-    token: "0x1618efC9867F3Bd7D2bf80ce5f7E6174Fd3bEf96",
-    enabled: isConnected,
+    token: "0x40079f576625B764E191AF9C38Ecb2e19D69B675",
+    enabled: connected,
     onSuccess(data) {
       setBalanceV2(data.formatted)
       console.log('Success V2 balance:', data.formatted)
@@ -60,12 +63,13 @@ const Migration = () => {
     },
   })
 
+  // Prepare approval of V1 balance
   const { config: approveConfig } = usePrepareContractWrite({
-    address: "0xf89c10e67b2F8bDd2a44cF4E081378e0EAA5C428",
+    address: "0xa30d02c5cdb6a76e47ea0d65f369fd39618541fe",
     abi: GogeToken1.abi,
     functionName: "approve",
-    args:[GogeToken2.address, ethers.utils.parseUnits(balanceV1)],
-    enabled: isConnected && !ethers.utils.parseUnits(balanceV1).isZero(),
+    args:["0x40079f576625B764E191AF9C38Ecb2e19D69B675", ethers.utils.parseUnits(balanceV1)],
+    enabled: connected && (bal && typeof bal !== "undefined"),
     onSuccess(data){
         console.log(`Prepared ${data.functionName} to approve ${balanceV1} V1 tokens for ${wallet}`)
     },
@@ -74,114 +78,124 @@ const Migration = () => {
     }
   })
 
-  const { isSuccess: approveSuccess, writeAsync: approveTx } = useContractWrite({
+  const { writeAsync: approveTx } = useContractWrite({
     ...approveConfig,
     mode: "prepared",
-    onSuccess() {
-        console.log(`Successfully approved GogeV1 balance for ${wallet}`)
-    },
-    onError(error) {
-        console.error('Failed to perform approval', error)
-    }
-  })
-
-  const { config: migrateConfig } = usePrepareContractWrite({
-    address: "0x1618efC9867F3Bd7D2bf80ce5f7E6174Fd3bEf96",
-    abi: GogeToken2.abi,
-    functionName: "migrate",
-    enabled: isConnected && approveSuccess, // unless disabled, this will always run immediately!
-    onSuccess(data){
-        console.log(`Prepared ${data.functionName} to migrate tokens for ${wallet}`)
-    },
-    onError(error) {
-        console.error('Failed to prepare migration', error);
-    }
-  })
-
-  const { isSuccess: migrateSuccess, writeAsync: migrateTx } = useContractWrite({
-    ...migrateConfig,
-    mode: "prepared",
-    onSuccess() {
-        console.log(`Successfully migrated V1 tokens to V2 for ${wallet}`)
-    },
-    onError(error) {
-        console.error('Failed to perform migration', error)
-    }
   })
 
   useEffect(() => {
-    if(!isConnected) {
+    if(!connected) {
         console.log('Please connect a wallet to the application!')
         setBalanceV1("0.0")
         setBalanceV2("0.0")
     }
-  }, [isConnected])
+  }, [connected])
 
   return (
       <>
-        {migrateSuccess ? <Confetti width={width} height={height}/> : null}
+        {migrated ? <Confetti width={width} height={height}/> : null}
 
-        <nav className="bg-white font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-1 px-6 goge-navbar shadow sm:items-baseline w-full">
-              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
-                <Image src={Logo2} className="inline-block pb-3 pr-1" alt="goge" /><Image className="pl-1 pb-3 inline-block" src={Logo1} alt="dog" />
-              </div>
-              <div className="xs:w-12/12 sm:w-12/12 md:w-8/12 lg:w-8/12 xl:w-8/12 pt-2">
-                <Image src={Rainbow} className="mx-auto xs:pb-3 sm:pb-3 md:pb-0 lg:pb-0 xl:pb-0" alt="rainbow" />
-              </div>
-              <div className="xs:w-12/12 sm:w-12/12 md:w-2/12 lg:w-2/12 xl:w-2/12">
-                <span className="align-baseline xs:float-none sm:float-none md:float-right lg:float-right xl:float-right float-right">
-                  <Web3Button icon="show" label="Connect Wallet" balance="hide" />
-                </span>
-              </div>
-          </nav>
+        <nav className="flex justify-between items-center bg-[#3E274F]">
+          <Link href="https://goge.co/">
+            <div className='flex items-center py-4 pl-16'>
+              <Image className="w-12 h-12 sm:block" src={GogeDog} alt="Goge"/>
+              <Image className="ml-3 hidden sm:block" src={GogeName} alt="Goge"/>
+            </div>
+          </Link>
+          <Image className="hidden sm:block" src={Rainbow} alt="Goge" />
+          <div className='pr-16'>
+            <Web3Button icon="hide" label="Connect Wallet" balance="hide"/>
+          </div>
+        </nav>
     
-          <div className="top-migration-section px-10">
-              <div className="w-2/6 xs:w-5/6 sm:w-4/6 md:w-2/6 lg:w-2/6 xl:w-2/6 py-7 m-auto text-center font-semibold"><span>Goge Migration Page</span><br /><span className="text-sm">Migrate your v1 tokens for v2 tokens.</span></div>
+        <div className="top-migration-section px-12">
+          <div className="w-2/6 xs:w-5/6 sm:w-4/6 md:w-2/6 lg:w-2/6 xl:w-2/6 py-3 m-auto text-center font-semibold">
+            <span className="text-lg">Goge Migration Page</span>
+            <br/>
+            <span className="text-md">Migrate your V1 tokens to V2 tokens!</span>
           </div>
+          <div className="w-2/6 xs:w-5/6 sm:w-4/6 md:w-2/6 lg:w-2/6 xl:w-2/6 py-3 m-auto flex flex-row justify-center gap-4">
+              <a className="p-1 border border-2 border-solid border-[#3E274F] rounded-md hover:bg-purple-400 text-sm font-bold gap-1" href="https://bscscan.com/address/0xa30d02c5cdb6a76e47ea0d65f369fd39618541fe#writeContract" rel="noreferrer noopener" target="_blank">
+                V1 Contract
+              </a>
+              <a className="p-1 border border-2 border-solid border-[#3E274F] rounded-md hover:bg-purple-400 text-sm font-bold gap-1" href="https://bscscan.com/address/0x40079f576625B764E191AF9C38Ecb2e19D69B675#writeContract" rel="noreferrer noopener" target="_blank">
+                V2 Contract
+              </a>
+          </div>
+        </div>
 
-          <div className="flex pt-28 bg-white">
-              <div className="m-auto w-1/6 xs:w-5/6 sm:w-4/6 md:w-1/6 lg:w-1/6 xl:w-1/6">
-                  <div className="migrate-box">
-                      <div className="m-auto px-4 py-5 sm:p-6">
-                          <div className="mt-2 max-w-xl text-sm">
-                            {
-                              migrateSuccess ? 
-                                <div>
-                                  <h1 className="font-bold text-purple-700">GOGE V2 Balance:</h1>
-                                  <h2 className="text-truncate text-purple-700">{balanceV2}</h2>
-                                </div>
-                                :
-                                <div>
-                                  <h1 className="font-bold text-purple-700">Migratable V1 Tokens:</h1>
-                                  <h2 className="text-truncate text-purple-700">{balanceV1}</h2>
-                                </div>
-                            }
-                          </div>
-                          <div className="pt-4 flex content-center">
-                            <button className="inline-flex m-auto migrate-button px-4 py-2 sm:text-sm"
-                                disabled={!isConnected ? true : (balanceV1 == '0.0') ? true : migrateSuccess ? true : false}
-                                onClick={ 
-                                  !approveSuccess ? 
-                                    async () => {
-                                      await approveTx?.()
-                                      .catch(() => {
-                                          console.error('User rejected approval!');
-                                      })
-                                    } : 
-                                    async () => {
-                                      await migrateTx?.()
-                                      .catch(() => {
-                                          console.error('User rejected migration!')
+        <div className="flex pt-28">
+            <div className="m-auto w-1/6 xs:w-5/6 sm:w-4/6 md:w-1/6 lg:w-1/6 xl:w-1/6">
+                <div className="migrate-box">
+                    <div className="m-auto px-4 py-5 sm:p-6">
+                        <div className="max-w-xl text-sm">
+                          {
+                            (migrated || balanceV2 !== "0.0") && (balanceV1 === "0.0") ? 
+                              <div>
+                                <h1 className="font-bold">GOGE V2 Balance:</h1>
+                                <h2 className="text-truncate">{balanceV2}</h2>
+                              </div>
+                              :
+                              <div>
+                                <h1 className="font-bold">Migratable V1 Tokens:</h1>
+                                <h2 className="text-truncate">{balanceV1}</h2>
+                              </div>
+                          }
+                        </div>
+                        <div className="pt-4 flex content-center">
+                          <button className="inline-flex m-auto migrate-button px-4 py-2 sm:text-sm font-bold disabled:text-neutral-500 disabled:border-2"
+                              disabled={!connected ? true : (balanceV1 === '0.0') ? true : migrated ? true : false}
+                              onClick={ 
+                                !approved ? 
+                                  async () => {
+                                    await approveTx?.()
+                                    .then(async (tx) => {
+                                      const receipt = await tx.wait() 
+                                      if(receipt.status == 1) {
+                                        console.log('Approval transaction succeeded!', receipt.logs)
+                                        setApproval(true)
+                                        return;
+                                      }
+                                      console.error('Approval transaction reverted!', receipt.logs)
+                                      setApproval(false)
                                     })
-                                }}
-                            >
-                              {!isConnected  ? "Please Connect Wallet" : (balanceV1 == '0.0' && !migrateSuccess) ? "No Tokens to Migrate" : migrateSuccess ? "Tokens Migrated!" : !approveSuccess ? "Approve Migration" : "Migrate Tokens"}
-                            </button>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
+                                    .catch(() => {
+                                        console.error('User rejected approval!')
+                                    })
+                                  } : 
+                                  async () => {
+                                    try {
+                                      // Prepare migration transaction
+                                      const config = await prepareWriteContract({
+                                        address: "0x40079f576625B764E191AF9C38Ecb2e19D69B675",
+                                        abi: GogeToken2.abi,
+                                        functionName: "migrate",
+                                      });
+                                      // Start migration transaction
+                                      const migrateTx = await writeContract(config)
+                                      // Ensure that migration transaction is mined
+                                      const receipt = await migrateTx.wait()
+                                      // Verify status of migration transaction 1 is success, 0 is revert
+                                      if(receipt.status == 1) {
+                                        console.log('Migration transaction succeeded!', receipt.logs)
+                                        setMigration(true)
+                                        return;
+                                      }
+                                      console.error('Migration transaction reverted!', receipt.logs)
+                                      setMigration(false)
+                                    } catch(err) {
+                                      console.error('Migration transaction error!', err)
+                                    }
+                                  }
+                              }
+                          >
+                            {!connected  ? "Please Connect Wallet" : (migrated || balanceV2 !== "0.0") ? "Tokens Migrated!" : (balanceV1 === '0.0') ? "No Tokens to Migrate" : !approved ? "Approve Migration" : "Migrate Tokens"}
+                          </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
       </>
   )
 

@@ -40,6 +40,7 @@ a {
 .migrate-box{
   background-color: #EDD7FD;
   border-radius: 10px;
+  color: #3E274F;
 }
 
 .goge-navbar{
@@ -47,7 +48,6 @@ a {
 }
 
 .top-migration-section{
-  background-color: #EDD7FD;
   color: #3E274F;
 }
 
